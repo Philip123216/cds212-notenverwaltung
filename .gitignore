@@ -1,0 +1,25 @@
+# Byte-Code & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtuelle Umgebungen
+.venv/
+venv/
+ENV/
+
+# Test- und Werkzeug-Caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build-Artefakte
+dist/
+build/
+*.egg-info/
+
+# Lokale Konfiguration mit Secrets (NIEMALS committen!)
+.env
+*.tfstate
+*.tfstate.*
