@@ -47,8 +47,74 @@ class InMemoryGradeRepository:
         return True
 
 
+class PostgresGradeRepository:
+    """PostgreSQL-Backend für den Container- und Produktionsbetrieb."""
+
+    def __init__(self, dsn: str) -> None:
+        import psycopg
+        from psycopg_pool import ConnectionPool
+
+        self._psycopg = psycopg
+        self._pool = ConnectionPool(dsn, min_size=1, max_size=5, open=True)
+        self._create_schema()
+
+    def _create_schema(self) -> None:
+        with self._pool.connection() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS grades (
+                    id      SERIAL PRIMARY KEY,
+                    course  TEXT NOT NULL,
+                    grade   NUMERIC(3, 2) NOT NULL,
+                    ects    INTEGER NOT NULL
+                )
+                """
+            )
+
+    def list(self) -> list[Grade]:
+        with self._pool.connection() as conn:
+            rows = conn.execute(
+                "SELECT id, course, grade, ects FROM grades ORDER BY id"
+            ).fetchall()
+        return [Grade(r[0], r[1], float(r[2]), int(r[3])) for r in rows]
+
+    def get(self, grade_id: int) -> Grade | None:
+        with self._pool.connection() as conn:
+            row = conn.execute(
+                "SELECT id, course, grade, ects FROM grades WHERE id = %s", (grade_id,)
+            ).fetchone()
+        return Grade(row[0], row[1], float(row[2]), int(row[3])) if row else None
+
+    def add(self, course: str, grade: float, ects: int) -> Grade:
+        with self._pool.connection() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO grades (course, grade, ects)
+                VALUES (%s, %s, %s)
+                RETURNING id, course, grade, ects
+                """,
+                (course, grade, ects),
+            ).fetchone()
+        return Grade(row[0], row[1], float(row[2]), int(row[3]))
+
+    def delete(self, grade_id: int) -> bool:
+        with self._pool.connection() as conn:
+            res = conn.execute("DELETE FROM grades WHERE id = %s", (grade_id,))
+        return res.rowcount > 0
+
+    def healthy(self) -> bool:
+        try:
+            with self._pool.connection() as conn:
+                conn.execute("SELECT 1")
+            return True
+        except Exception:
+            log.exception("Database health check failed")
+            return False
+
+
 def create_repository(config: Config) -> GradeRepository:
     if config.database_url:
-        log.info("using database: %s", config.database_url)
-    log.warning("no DATABASE_URL set, using in-memory grade repository")
+        log.info("Verwende PostgreSQL-Repository: %s", config.database_url)
+        return PostgresGradeRepository(config.database_url)
+    log.warning("Keine DATABASE_URL gesetzt -> verwende In-Memory-Repository")
     return InMemoryGradeRepository()
