@@ -1,3 +1,5 @@
+![CI](https://github.com/Philip123216/cds212-notenverwaltung/actions/workflows/ci.yml/badge.svg)
+
 # Notenverwaltung (Grades Tracker)
 
 REST-API zur Erfassung von Studienleistungen, Noten und ECTS-Punkten mit automatisierter Berechnung des Notendurchschnitts (GPA). Entwickelt als Semesterprojekt im Modul **CDS212 (DevOps)** an der FHGR.
