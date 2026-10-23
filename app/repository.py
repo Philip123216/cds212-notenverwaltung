@@ -73,9 +73,7 @@ class PostgresGradeRepository:
 
     def list(self) -> list[Grade]:
         with self._pool.connection() as conn:
-            rows = conn.execute(
-                "SELECT id, course, grade, ects FROM grades ORDER BY id"
-            ).fetchall()
+            rows = conn.execute("SELECT id, course, grade, ects FROM grades ORDER BY id").fetchall()
         return [Grade(r[0], r[1], float(r[2]), int(r[3])) for r in rows]
 
     def get(self, grade_id: int) -> Grade | None:
