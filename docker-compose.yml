@@ -1,0 +1,34 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        APP_VERSION: 1.0.0-local
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://grades:${POSTGRES_PASSWORD:-changeme}@db:5432/grades
+      LOG_LEVEL: INFO
+      GUNICORN_WORKERS: 2
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: grades
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: grades
+    volumes:
+      - grades-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grades -d grades"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  grades-data:
