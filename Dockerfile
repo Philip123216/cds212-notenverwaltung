@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # Stufe 3: Runtime - Schlankes Produktions-Image ohne Compiler
 FROM base AS runtime
 # Nicht als root laufen (Least Privilege)
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 10001 appuser
 
 # Nur die fertigen Pakete aus dem Builder übernehmen
