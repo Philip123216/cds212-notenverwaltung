@@ -62,7 +62,7 @@ jobs:
           if-no-files-found: error
 
   build:
-    name: Build image & Smoke-Test
+    name: Build image, Scan & Smoke-Test
     runs-on: ubuntu-latest
     needs: [lint, test]
     steps:
@@ -70,6 +70,15 @@ jobs:
 
       - name: Build container image
         run: docker build -t notenverwaltung:ci .
+
+      - name: Scan image with Trivy (Security Gate)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: notenverwaltung:ci
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
 
       - name: Smoke-test the image
         run: |

@@ -1,0 +1,37 @@
+groups:
+  - name: notenverwaltung
+    rules:
+      - alert: NotenverwaltungDown
+        expr: up{job="notenverwaltung"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Notenverwaltung ist nicht erreichbar"
+          description: "Prometheus konnte {{ $labels.instance }} seit mehr als 1 Minute nicht scrapen."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(flask_http_request_total{status=~"5.."}[5m]))
+            /
+          sum(rate(flask_http_request_total[5m]))
+            > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hohe 5xx-Fehlerrate bei der Notenverwaltung"
+          description: "Mehr als 5% der Anfragen in den letzten 5 Minuten schlugen mit 5xx fehl."
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(flask_http_request_duration_seconds_bucket[5m]))
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hohe p95-Latenz bei der Notenverwaltung"
+          description: "Das 95. Perzentil der Antwortzeit liegt seit 5 Minuten über 1 Sekunde."
